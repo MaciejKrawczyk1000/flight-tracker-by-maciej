@@ -32,7 +32,7 @@ const airports = {
 // Common aircraft types
 const aircraftTypes = [
   "Boeing 707", "Boeing 717", "Boeing 727", "Boeing 737", "Boeing 737 MAX", "Boeing 747", "Boeing 757", "Boeing 767", "Boeing 777", "Boeing 787-8 Dreamliner", "Boeing 787-9 Dreamliner", "Boeing 787-10 Dreamliner",
-  "Airbus A220", "Airbus A300", "Airbus A310", "Airbus A318", "Airbus A319", "Airbus A320", "Airbus A320neo", "Airbus A321", "Airbus A321neo", "Airbus A330", "Airbus A330neo", "Airbus A340", "Airbus A350 XWB", "Airbus A380",
+  "Airbus A220", "Airbus A300", "Airbus A310", "Airbus A318", "Airbus A319", "Airbus A320", "Airbus A320neo", "Airbus A321", "Airbus A321neo", "Airbus A330", "Airbus A330neo", "Airbus A340", "Airbus A350 XWB", "Airbus A350-10", "Airbus A380",
   "Embraer E170", "Embraer E175", "Embraer E190", "Embraer E195", "Embraer E2 Series",
   "Bombardier CRJ200", "Bombardier CRJ700", "Bombardier CRJ900", "Bombardier CRJ1000",
   "ATR 42", "ATR 72",
