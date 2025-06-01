@@ -15,6 +15,7 @@ const airports = {
   "ATL": { name: "Hartsfield-Jackson Atlanta International Airport", city: "Atlanta", coords: [-84.4281, 33.6407] as [number, number] },
   "CDG": { name: "Paris Charles de Gaulle Airport", city: "Paris", coords: [2.5479, 49.0097] as [number, number] },
   "CPT": { name: "Cape Town International Airport", city: "Cape Town", coords: [18.6017, -33.9649] as [number, number] },
+  "CUN": { name: "Cancun International Airport", city: "Cancun", coords: [-86.8770, 21.0366] as [number, number] },
   "DXB": { name: "Dubai International Airport", city: "Dubai", coords: [55.3644, 25.2532] as [number, number] },
   "FRA": { name: "Frankfurt Airport", city: "Frankfurt", coords: [8.5622, 50.0379] as [number, number] },
   "JFK": { name: "John F. Kennedy International Airport", city: "New York", coords: [-73.7781, 40.6413] as [number, number] },
