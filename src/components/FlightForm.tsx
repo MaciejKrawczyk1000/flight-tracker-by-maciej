@@ -1,0 +1,200 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plane } from "lucide-react";
+import { toast } from "sonner";
+import { Flight } from "@/pages/Index";
+
+interface FlightFormProps {
+  onAddFlight: (flight: Omit<Flight, "id">) => void;
+}
+
+// Popular airports with coordinates and city names
+const airports = {
+  "ATL": { name: "Hartsfield-Jackson Atlanta International Airport", city: "Atlanta", coords: [-84.4281, 33.6407] as [number, number] },
+  "CDG": { name: "Paris Charles de Gaulle Airport", city: "Paris", coords: [2.5479, 49.0097] as [number, number] },
+  "CPT": { name: "Cape Town International Airport", city: "Cape Town", coords: [18.6017, -33.9649] as [number, number] },
+  "DXB": { name: "Dubai International Airport", city: "Dubai", coords: [55.3644, 25.2532] as [number, number] },
+  "FRA": { name: "Frankfurt Airport", city: "Frankfurt", coords: [8.5622, 50.0379] as [number, number] },
+  "JFK": { name: "John F. Kennedy International Airport", city: "New York", coords: [-73.7781, 40.6413] as [number, number] },
+  "LAX": { name: "Los Angeles International Airport", city: "Los Angeles", coords: [-118.4081, 33.9425] as [number, number] },
+  "LHR": { name: "London Heathrow Airport", city: "London", coords: [-0.4543, 51.4700] as [number, number] },
+  "MDW": { name: "Chicago Midway International Airport", city: "Chicago", coords: [-87.7524, 41.7868] as [number, number] },
+  "NRT": { name: "Narita International Airport", city: "Tokyo", coords: [140.3929, 35.7720] as [number, number] },
+  "ORD": { name: "Chicago O'Hare International Airport", city: "Chicago", coords: [-87.9073, 41.9742] as [number, number] },
+  "SIN": { name: "Singapore Changi Airport", city: "Singapore", coords: [103.9915, 1.3644] as [number, number] },
+  "SYD": { name: "Sydney Kingsford Smith Airport", city: "Sydney", coords: [151.1772, -33.9399] as [number, number] },
+  "TPA": { name: "Tampa International Airport", city: "Tampa", coords: [-82.5332, 27.9755] as [number, number] },
+  "YYZ": { name: "Toronto Pearson International Airport", city: "Toronto", coords: [-79.6248, 43.6777] as [number, number] },
+};
+
+// Common aircraft types
+const aircraftTypes = [
+  "Boeing 707", "Boeing 717", "Boeing 727", "Boeing 737", "Boeing 737 MAX", "Boeing 747", "Boeing 757", "Boeing 767", "Boeing 777", "Boeing 787-8 Dreamliner", "Boeing 787-9 Dreamliner", "Boeing 787-10 Dreamliner",
+  "Airbus A220", "Airbus A300", "Airbus A310", "Airbus A318", "Airbus A319", "Airbus A320", "Airbus A320neo", "Airbus A321", "Airbus A321neo", "Airbus A330", "Airbus A330neo", "Airbus A340", "Airbus A350 XWB", "Airbus A380",
+  "Embraer E170", "Embraer E175", "Embraer E190", "Embraer E195", "Embraer E2 Series",
+  "Bombardier CRJ200", "Bombardier CRJ700", "Bombardier CRJ900", "Bombardier CRJ1000",
+  "ATR 42", "ATR 72",
+  "Fokker 70", "Fokker 100",
+  "Saab 340", "Saab 2000",
+  "De Havilland Canada Dash 8",
+  "McDonnell Douglas MD-80", "McDonnell Douglas MD-90", "McDonnell Douglas MD-11",
+  "Concorde"
+];
+
+export const FlightForm = ({ onAddFlight }: FlightFormProps) => {
+  const [formData, setFormData] = useState({
+    from: "",
+    to: "",
+    date: "",
+    aircraft: "",
+    airline: "",
+  });
+
+  const calculateDistance = (coord1: [number, number], coord2: [number, number]): number => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (coord2[1] - coord1[1]) * Math.PI / 180;
+    const dLon = (coord2[0] - coord1[0]) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return Math.round(R * c);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.from || !formData.to || !formData.date || !formData.aircraft || !formData.airline) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (formData.from === formData.to) {
+      toast.error("Departure and arrival airports cannot be the same");
+      return;
+    }
+
+    const fromAirport = airports[formData.from as keyof typeof airports];
+    const toAirport = airports[formData.to as keyof typeof airports];
+
+    if (!fromAirport || !toAirport) {
+      toast.error("Please select valid airports");
+      return;
+    }
+
+    const distance = calculateDistance(fromAirport.coords, toAirport.coords);
+
+    onAddFlight({
+      from: formData.from,
+      to: formData.to,
+      fromCoords: fromAirport.coords,
+      toCoords: toAirport.coords,
+      date: formData.date,
+      aircraft: formData.aircraft,
+      airline: formData.airline,
+      distance,
+    });
+
+    setFormData({
+      from: "",
+      to: "",
+      date: "",
+      aircraft: "",
+      airline: "",
+    });
+
+    toast.success("Flight added successfully!");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="from" className="text-slate-200">From</Label>
+          <select
+            id="from"
+            value={formData.from}
+            onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
+            className="w-full mt-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select City</option>
+            {Object.entries(airports)
+              .sort(([, infoA], [, infoB]) => infoA.city.localeCompare(infoB.city))
+              .map(([code, info]) => (
+                <option key={code} value={code}>
+                  {info.city} ({code})
+                </option>
+              ))}
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="to" className="text-slate-200">To</Label>
+          <select
+            id="to"
+            value={formData.to}
+            onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
+            className="w-full mt-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select City</option>
+            {Object.entries(airports)
+              .sort(([, infoA], [, infoB]) => infoA.city.localeCompare(infoB.city))
+              .map(([code, info]) => (
+                <option key={code} value={code}>
+                  {info.city} ({code})
+                </option>
+              ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="date" className="text-slate-200">Date</Label>
+        <Input
+          type="date"
+          id="date"
+          value={formData.date}
+          onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+          className="mt-1 bg-slate-700 border-slate-600 text-white focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="aircraft" className="text-slate-200">Aircraft</Label>
+        <select
+          id="aircraft"
+          value={formData.aircraft}
+          onChange={(e) => setFormData(prev => ({ ...prev, aircraft: e.target.value }))}
+          className="w-full mt-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">Select Aircraft Type</option>
+          {aircraftTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <Label htmlFor="airline" className="text-slate-200">Airline</Label>
+        <Input
+          type="text"
+          id="airline"
+          placeholder="e.g., American Airlines"
+          value={formData.airline}
+          onChange={(e) => setFormData(prev => ({ ...prev, airline: e.target.value }))}
+          className="mt-1 bg-slate-700 border-slate-600 text-white focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+        />
+      </div>
+
+      <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+        <Plane className="w-4 h-4 mr-2" />
+        Add Flight
+      </Button>
+    </form>
+  );
+};
