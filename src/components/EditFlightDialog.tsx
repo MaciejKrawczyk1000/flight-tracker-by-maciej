@@ -29,6 +29,7 @@ const airports = {
   "MDW": { name: "Chicago Midway International Airport", city: "Chicago", coords: [-87.7524, 41.7868] as [number, number] },
   "NRT": { name: "Narita International Airport", city: "Tokyo", coords: [140.3929, 35.7720] as [number, number] },
   "ORD": { name: "Chicago O'Hare International Airport", city: "Chicago", coords: [-87.9073, 41.9742] as [number, number] },
+  "ORF": { name: "Norfolk International Airport", city: "Norfolk", coords: [-76.2012, 36.8946] as [number, number] },
   "SIN": { name: "Singapore Changi Airport", city: "Singapore", coords: [103.9915, 1.3644] as [number, number] },
   "SYD": { name: "Sydney Kingsford Smith Airport", city: "Sydney", coords: [151.1772, -33.9399] as [number, number] },
   "TPA": { name: "Tampa International Airport", city: "Tampa", coords: [-82.5332, 27.9755] as [number, number] },
