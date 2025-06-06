@@ -20,6 +20,7 @@ const airports = {
   "FRA": { name: "Frankfurt Airport", city: "Frankfurt", coords: [8.5622, 50.0379] as [number, number] },
   "JFK": { name: "John F. Kennedy International Airport", city: "New York", coords: [-73.7781, 40.6413] as [number, number] },
   "LAX": { name: "Los Angeles International Airport", city: "Los Angeles", coords: [-118.4081, 33.9425] as [number, number] },
+  "LGA": { name: "LaGuardia Airport", city: "New York", coords: [-73.8740, 40.7769] as [number, number] },
   "LHR": { name: "London Heathrow Airport", city: "London", coords: [-0.4543, 51.4700] as [number, number] },
   "MAD": { name: "Madrid-Barajas Adolfo Suárez Airport", city: "Madrid", coords: [-3.5679, 40.4719] as [number, number] },
   "MDW": { name: "Chicago Midway International Airport", city: "Chicago", coords: [-87.7524, 41.7868] as [number, number] },
