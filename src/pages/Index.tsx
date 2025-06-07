@@ -4,7 +4,9 @@ import { FlightMap } from "@/components/FlightMap";
 import { FlightStats } from "@/components/FlightStats";
 import { FlightList } from "@/components/FlightList";
 import { EditFlightDialog } from "@/components/EditFlightDialog";
-import { Plane } from "lucide-react";
+import { Plane, Share2, Copy, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 // Removed recharts imports as they are no longer needed for this section
 // import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -28,9 +30,33 @@ const Index = () => {
   const [mapboxToken, setMapboxToken] = useState("");
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [showShareUrl, setShowShareUrl] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Load flights and mapbox token from localStorage on component mount
   useEffect(() => {
+    // First, check if there's shared data in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedData = urlParams.get('data');
+    
+    if (sharedData) {
+      try {
+        const decodedData = JSON.parse(atob(sharedData));
+        if (decodedData.flights && Array.isArray(decodedData.flights)) {
+          setFlights(decodedData.flights);
+          toast.success("Shared flight data loaded successfully!");
+          // Clear the URL parameters after loading
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return; // Don't load from localStorage if we have shared data
+        }
+      } catch (error) {
+        console.error("Error loading shared data:", error);
+        toast.error("Failed to load shared flight data");
+      }
+    }
+
+    // Load from localStorage if no shared data
     const savedFlights = localStorage.getItem(STORAGE_KEY);
     if (savedFlights) {
       try {
@@ -89,6 +115,43 @@ const Index = () => {
   const handleCloseEdit = () => {
     setIsEditDialogOpen(false);
     setEditingFlight(null);
+  };
+
+  const generateShareUrl = () => {
+    if (flights.length === 0) {
+      toast.error("No flights to share! Add some flights first.");
+      return;
+    }
+
+    try {
+      const dataToShare = {
+        flights: flights,
+        timestamp: new Date().toISOString()
+      };
+      
+      const encodedData = btoa(JSON.stringify(dataToShare));
+      const baseUrl = window.location.origin + window.location.pathname;
+      const url = `${baseUrl}?data=${encodedData}`;
+      
+      setShareUrl(url);
+      setShowShareUrl(true);
+      toast.success("Share link generated!");
+    } catch (error) {
+      console.error("Error generating share URL:", error);
+      toast.error("Failed to generate share link");
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast.error("Failed to copy link");
+    }
   };
 
   // Calculate aircraft statistics for the display
@@ -190,6 +253,60 @@ const Index = () => {
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Share Section */}
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 mb-8">
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-white mb-4">Share Your Flight Data</h3>
+            <p className="text-slate-300 mb-6">
+              Generate a shareable link that includes all your flight information for others to view.
+            </p>
+            
+            <Button 
+              onClick={generateShareUrl}
+              className="bg-blue-600 hover:bg-blue-700 text-white mb-4"
+              disabled={flights.length === 0}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Generate Share Link
+            </Button>
+
+            {showShareUrl && (
+              <div className="mt-4 p-4 bg-slate-700/50 rounded-lg border border-slate-600">
+                <p className="text-slate-300 text-sm mb-2">Share this link:</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={shareUrl}
+                    readOnly
+                    className="flex-1 px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                  />
+                  <Button
+                    onClick={copyToClipboard}
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-500 text-slate-300 hover:bg-slate-600"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-1" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-slate-400 text-xs mt-2">
+                  Anyone with this link can view your flight data (read-only).
+                </p>
               </div>
             )}
           </div>
