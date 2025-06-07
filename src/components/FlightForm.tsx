@@ -14,6 +14,7 @@ interface FlightFormProps {
 const airports = {
   "ATL": { name: "Hartsfield-Jackson Atlanta International Airport", city: "Atlanta", coords: [-84.4281, 33.6407] as [number, number] },
   "CDG": { name: "Paris Charles de Gaulle Airport", city: "Paris", coords: [2.5479, 49.0097] as [number, number] },
+  "CPH": { name: "Copenhagen Airport", city: "Copenhagen", coords: [12.6561, 55.6180] as [number, number] },
   "CPT": { name: "Cape Town International Airport", city: "Cape Town", coords: [18.6017, -33.9649] as [number, number] },
   "CUN": { name: "Cancun International Airport", city: "Cancun", coords: [-86.8770, 21.0366] as [number, number] },
   "DXB": { name: "Dubai International Airport", city: "Dubai", coords: [55.3644, 25.2532] as [number, number] },
@@ -30,6 +31,7 @@ const airports = {
   "SIN": { name: "Singapore Changi Airport", city: "Singapore", coords: [103.9915, 1.3644] as [number, number] },
   "SYD": { name: "Sydney Kingsford Smith Airport", city: "Sydney", coords: [151.1772, -33.9399] as [number, number] },
   "TPA": { name: "Tampa International Airport", city: "Tampa", coords: [-82.5332, 27.9755] as [number, number] },
+  "WAW": { name: "Warsaw Chopin Airport", city: "Warsaw", coords: [20.9679, 52.1657] as [number, number] },
   "YYZ": { name: "Toronto Pearson International Airport", city: "Toronto", coords: [-79.6248, 43.6777] as [number, number] },
 };
 
