@@ -160,8 +160,15 @@ const Index = () => {
     return acc;
   }, {} as Record<string, number>);
 
-  // Sort aircraft types alphabetically for consistent display
-  const sortedAircraftStats = Object.entries(aircraftStats).sort(([a], [b]) => a.localeCompare(b));
+  // Sort aircraft types by flight count (most to least), then alphabetically for ties
+  const sortedAircraftStats = Object.entries(aircraftStats).sort(([aircraftA, countA], [aircraftB, countB]) => {
+    // First sort by count (descending)
+    if (countB !== countA) {
+      return countB - countA;
+    }
+    // If counts are equal, sort alphabetically
+    return aircraftA.localeCompare(aircraftB);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
