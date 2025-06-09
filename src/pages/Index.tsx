@@ -191,16 +191,7 @@ const Index = () => {
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-slate-700">
             <h3 className="text-xl font-semibold text-white mb-4">Setup Required</h3>
             <p className="text-slate-300 mb-4">
-              Please enter your Mapbox public token to enable the interactive map. 
-              You can get one for free at{" "}
-              <a 
-                href="https://mapbox.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 underline"
-              >
-                mapbox.com
-              </a>
+              Enter the following text below: pk.eyJ1IjoibWFjaWVqa3Jhd2N6eWsxMDAwIiwiYSI6ImNtYmNjOTdpYzFiZzUyb291NGxscmNoMGYifQ.Jo4lzJAv_d2r2eP5X7_QFw
             </p>
             <input
               type="text"
