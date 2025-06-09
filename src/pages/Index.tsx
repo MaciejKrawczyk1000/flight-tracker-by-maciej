@@ -24,10 +24,11 @@ export interface Flight {
 
 const STORAGE_KEY = "flight-tracker-flights";
 const MAPBOX_TOKEN_KEY = "flight-tracker-mapbox-token";
+const DEFAULT_MAPBOX_TOKEN = "pk.eyJ1IjoibWFjaWVqa3Jhd2N6eWsxMDAwIiwiYSI6ImNtYmNjOTdpYzFiZzUyb291NGxscmNoMGYifQ.Jo4lzJAv_d2r2eP5X7_QFw";
 
 const Index = () => {
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [mapboxToken, setMapboxToken] = useState("");
+  const [mapboxToken, setMapboxToken] = useState(DEFAULT_MAPBOX_TOKEN);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
@@ -66,12 +67,15 @@ const Index = () => {
       }
     }
 
-    const savedToken = localStorage.getItem(MAPBOX_TOKEN_KEY); // Corrected variable name
+    // Check if there's a saved token, otherwise use the default
+    const savedToken = localStorage.getItem(MAPBOX_TOKEN_KEY);
     if (savedToken) {
       setMapboxToken(savedToken);
       console.log("Index.tsx: Loaded Mapbox token from localStorage:", savedToken ? "Token loaded" : "No token found");
     } else {
-      console.log("Index.tsx: No Mapbox token found in localStorage on mount.");
+      // Save the default token to localStorage for future use
+      localStorage.setItem(MAPBOX_TOKEN_KEY, DEFAULT_MAPBOX_TOKEN);
+      console.log("Index.tsx: Using default Mapbox token and saving to localStorage.");
     }
   }, []);
 
@@ -83,7 +87,7 @@ const Index = () => {
   // Save mapbox token to localStorage whenever it changes
   useEffect(() => {
     if (mapboxToken) {
-      localStorage.setItem(MAPBOX_TOKEN_KEY, mapboxToken); // Corrected variable name
+      localStorage.setItem(MAPBOX_TOKEN_KEY, mapboxToken);
       console.log("Index.tsx: Mapbox token updated and saved to localStorage.");
     }
   }, [mapboxToken]);
@@ -186,33 +190,14 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Mapbox Token Input */}
-        {!mapboxToken && (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-slate-700">
-            <h3 className="text-xl font-semibold text-white mb-4">Setup Required</h3>
-            <p className="text-slate-300 mb-4">
-              Enter the following text below: pk.eyJ1IjoibWFjaWVqa3Jhd2N6eWsxMDAwIiwiYSI6ImNtYmNjOTdpYzFiZzUyb291NGxscmNoMGYifQ.Jo4lzJAv_d2r2eP5X7_QFw
-            </p>
-            <input
-              type="text"
-              placeholder="Enter your Mapbox public token (pk.eyJ...)"
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        )}
-
         {/* Statistics Boxes */}
         <FlightStats flights={flights} />
 
         {/* Flight Map */}
-        {mapboxToken && (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 mb-8">
-            <h2 className="text-2xl font-semibold text-white mb-6">Flight Map</h2>
-            <FlightMap flights={flights} mapboxToken={mapboxToken} />
-          </div>
-        )}
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 mb-8">
+          <h2 className="text-2xl font-semibold text-white mb-6">Flight Map</h2>
+          <FlightMap flights={flights} mapboxToken={mapboxToken} />
+        </div>
 
         {/* Main Content Grid - Flight Form and Flight List */}
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
