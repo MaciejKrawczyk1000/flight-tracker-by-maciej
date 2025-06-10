@@ -81,9 +81,16 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
     
     if (routeSource) {
       routeSource.setData({ type: 'FeatureCollection', features: routeFeatures });
+      console.log("FlightMap.tsx: Updated routes source");
+    } else {
+      console.log("FlightMap.tsx: Routes source not found");
     }
+    
     if (airportSource) {
       airportSource.setData({ type: 'FeatureCollection', features: uniqueAirports });
+      console.log("FlightMap.tsx: Updated airports source");
+    } else {
+      console.log("FlightMap.tsx: Airports source not found");
     }
   };
 
@@ -201,9 +208,14 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
         }
       });
 
-      // Update map data immediately after map loads
+      // Update map data immediately after map loads - this is crucial for page refresh
       console.log("FlightMap.tsx: Map loaded, updating with current flights:", flights.length);
-      updateMapData(map.current, flights);
+      // Use a small timeout to ensure all sources are properly initialized
+      setTimeout(() => {
+        if (map.current && isMapLoaded.current) {
+          updateMapData(map.current, flights);
+        }
+      }, 100);
     });
 
     // Cleanup map on unmount
@@ -211,6 +223,7 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
       console.log("FlightMap.tsx: Cleaning up map.");
       if (map.current) {
         map.current.remove();
+        map.current = null;
       }
       isMapLoaded.current = false;
     };
