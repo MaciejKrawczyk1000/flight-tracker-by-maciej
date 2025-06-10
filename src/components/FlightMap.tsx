@@ -11,18 +11,18 @@ interface FlightMapProps {
 export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const isMapLoaded = useRef(false); // To track if map's style is loaded
+  const isMapLoaded = useRef(false);
 
-  console.log("FlightMap.tsx: Component rendered. mapboxToken:", mapboxToken ? "Token present" : "Token missing");
+  console.log("FlightMap.tsx: Component rendered. Flights count:", flights.length, "mapboxToken:", mapboxToken ? "Token present" : "Token missing");
 
   // Helper function to update map data sources
   const updateMapData = (mapInstance: mapboxgl.Map, currentFlights: Flight[]) => {
     if (!mapInstance || !isMapLoaded.current) {
       console.log("FlightMap.tsx: Skipping updateMapData - map not loaded or instance missing.");
-      return; // Ensure map is loaded
+      return;
     }
 
-    console.log("FlightMap.tsx: Updating map data sources.");
+    console.log("FlightMap.tsx: Updating map data sources with", currentFlights.length, "flights.");
 
     const routeFeatures = currentFlights.map((flight) => ({
       type: 'Feature' as const,
@@ -73,15 +73,24 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
       )
     );
 
+    console.log("FlightMap.tsx: Route features:", routeFeatures.length, "Airport features:", uniqueAirports.length);
+
     // Update data for existing sources
-    (mapInstance.getSource('routes') as mapboxgl.GeoJSONSource)?.setData({ type: 'FeatureCollection', features: routeFeatures });
-    (mapInstance.getSource('airports') as mapboxgl.GeoJSONSource)?.setData({ type: 'FeatureCollection', features: uniqueAirports });
+    const routeSource = mapInstance.getSource('routes') as mapboxgl.GeoJSONSource;
+    const airportSource = mapInstance.getSource('airports') as mapboxgl.GeoJSONSource;
+    
+    if (routeSource) {
+      routeSource.setData({ type: 'FeatureCollection', features: routeFeatures });
+    }
+    if (airportSource) {
+      airportSource.setData({ type: 'FeatureCollection', features: uniqueAirports });
+    }
   };
 
   // Effect 1: Initialize map and add static layers/handlers
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) {
-      console.log("FlightMap.tsx: Map initialization skipped. Container or token missing.", { container: mapContainer.current, token: mapboxToken });
+      console.log("FlightMap.tsx: Map initialization skipped. Container or token missing.", { container: !!mapContainer.current, token: !!mapboxToken });
       return;
     }
 
@@ -99,12 +108,18 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     map.current.on('load', () => {
-      isMapLoaded.current = true; // Mark map as loaded
+      isMapLoaded.current = true;
       console.log("FlightMap.tsx: Map loaded successfully!");
 
+      if (!map.current) return;
+
       // Add initial empty sources and layers
-      map.current?.addSource('routes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.current?.addLayer({
+      map.current.addSource('routes', { 
+        type: 'geojson', 
+        data: { type: 'FeatureCollection', features: [] } 
+      });
+      
+      map.current.addLayer({
         id: 'routes',
         type: 'line',
         source: 'routes',
@@ -113,14 +128,18 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
           'line-cap': 'round',
         },
         paint: {
-          'line-color': '#60a5fa', // Changed to a brighter blue
-          'line-width': 4, // Made thicker
+          'line-color': '#60a5fa',
+          'line-width': 4,
           'line-opacity': 0.8,
         },
       });
 
-      map.current?.addSource('airports', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.current?.addLayer({
+      map.current.addSource('airports', { 
+        type: 'geojson', 
+        data: { type: 'FeatureCollection', features: [] } 
+      });
+      
+      map.current.addLayer({
         id: 'airports',
         type: 'circle',
         source: 'airports',
@@ -133,7 +152,7 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
       });
 
       // Add click handlers for popups (only once)
-      map.current?.on('click', 'routes', (e) => {
+      map.current.on('click', 'routes', (e) => {
         if (e.features && e.features[0]) {
           const feature = e.features[0];
           const props = feature.properties;
@@ -152,7 +171,7 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
         }
       });
 
-      map.current?.on('click', 'airports', (e) => {
+      map.current.on('click', 'airports', (e) => {
         if (e.features && e.features[0]) {
           const feature = e.features[0];
           const props = feature.properties;
@@ -170,38 +189,45 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
       });
 
       // Change cursor on hover (only once)
-      map.current?.on('mouseenter', 'routes', () => {
+      map.current.on('mouseenter', 'routes', () => {
         if (map.current) {
           map.current.getCanvas().style.cursor = 'pointer';
         }
       });
 
-      map.current?.on('mouseleave', 'routes', () => {
+      map.current.on('mouseleave', 'routes', () => {
         if (map.current) {
           map.current.getCanvas().style.cursor = '';
         }
       });
 
-      // Call updateMapData immediately after map loads and sources are added
-      // This ensures initial flights are drawn if available
+      // Update map data immediately after map loads
+      console.log("FlightMap.tsx: Map loaded, updating with current flights:", flights.length);
       updateMapData(map.current, flights);
     });
 
     // Cleanup map on unmount
     return () => {
       console.log("FlightMap.tsx: Cleaning up map.");
-      map.current?.remove();
+      if (map.current) {
+        map.current.remove();
+      }
       isMapLoaded.current = false;
     };
   }, [mapboxToken]); // Re-run only if mapboxToken changes
 
   // Effect 2: Update map data when flights change
   useEffect(() => {
+    console.log("FlightMap.tsx: Flights effect triggered. Flights count:", flights.length, "Map loaded:", isMapLoaded.current);
+    
     if (map.current && isMapLoaded.current) {
-      console.log("FlightMap.tsx: Flights data changed, updating map.");
+      console.log("FlightMap.tsx: Updating map with flights data.");
       updateMapData(map.current, flights);
     } else {
-      console.log("FlightMap.tsx: Skipping flights data update. Map not ready.", { mapReady: !!map.current, isLoaded: isMapLoaded.current });
+      console.log("FlightMap.tsx: Skipping flights data update. Map not ready.", { 
+        mapReady: !!map.current, 
+        isLoaded: isMapLoaded.current 
+      });
     }
   }, [flights]); // Re-run when flights change
 
