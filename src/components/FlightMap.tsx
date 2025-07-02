@@ -12,13 +12,18 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const isMapLoaded = useRef(false);
+  const sourcesInitialized = useRef(false);
 
   console.log("FlightMap.tsx: Component rendered. Flights count:", flights.length, "mapboxToken:", mapboxToken ? "Token present" : "Token missing");
 
   // Helper function to update map data sources
   const updateMapData = (mapInstance: mapboxgl.Map, currentFlights: Flight[]) => {
-    if (!mapInstance || !isMapLoaded.current) {
-      console.log("FlightMap.tsx: Skipping updateMapData - map not loaded or instance missing.");
+    if (!mapInstance || !isMapLoaded.current || !sourcesInitialized.current) {
+      console.log("FlightMap.tsx: Skipping updateMapData - map not ready.", {
+        mapInstance: !!mapInstance,
+        isMapLoaded: isMapLoaded.current,
+        sourcesInitialized: sourcesInitialized.current
+      });
       return;
     }
 
@@ -158,6 +163,10 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
         },
       });
 
+      // Mark sources as initialized
+      sourcesInitialized.current = true;
+      console.log("FlightMap.tsx: Sources and layers initialized");
+
       // Add click handlers for popups (only once)
       map.current.on('click', 'routes', (e) => {
         if (e.features && e.features[0]) {
@@ -208,14 +217,9 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
         }
       });
 
-      // Update map data immediately after map loads - this is crucial for page refresh
-      console.log("FlightMap.tsx: Map loaded, updating with current flights:", flights.length);
-      // Use a small timeout to ensure all sources are properly initialized
-      setTimeout(() => {
-        if (map.current && isMapLoaded.current) {
-          updateMapData(map.current, flights);
-        }
-      }, 100);
+      // Update map data immediately after sources are initialized
+      console.log("FlightMap.tsx: Map loaded and sources initialized, updating with current flights:", flights.length);
+      updateMapData(map.current, flights);
     });
 
     // Cleanup map on unmount
@@ -226,20 +230,22 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
         map.current = null;
       }
       isMapLoaded.current = false;
+      sourcesInitialized.current = false;
     };
   }, [mapboxToken]); // Re-run only if mapboxToken changes
 
   // Effect 2: Update map data when flights change
   useEffect(() => {
-    console.log("FlightMap.tsx: Flights effect triggered. Flights count:", flights.length, "Map loaded:", isMapLoaded.current);
+    console.log("FlightMap.tsx: Flights effect triggered. Flights count:", flights.length, "Map loaded:", isMapLoaded.current, "Sources initialized:", sourcesInitialized.current);
     
-    if (map.current && isMapLoaded.current) {
+    if (map.current && isMapLoaded.current && sourcesInitialized.current) {
       console.log("FlightMap.tsx: Updating map with flights data.");
       updateMapData(map.current, flights);
     } else {
       console.log("FlightMap.tsx: Skipping flights data update. Map not ready.", { 
         mapReady: !!map.current, 
-        isLoaded: isMapLoaded.current 
+        isLoaded: isMapLoaded.current,
+        sourcesReady: sourcesInitialized.current
       });
     }
   }, [flights]); // Re-run when flights change
