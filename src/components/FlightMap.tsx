@@ -250,6 +250,14 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
     }
   }, [flights]); // Re-run when flights change
 
+  // Effect 3: Update map data when both map is ready and flights are available
+  useEffect(() => {
+    if (map.current && isMapLoaded.current && sourcesInitialized.current && flights.length > 0) {
+      console.log("FlightMap.tsx: Both map and flights ready, ensuring data is displayed");
+      updateMapData(map.current, flights);
+    }
+  }, [isMapLoaded.current, sourcesInitialized.current, flights]);
+
   return (
     <div className="relative">
       <div 
