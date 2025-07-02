@@ -13,6 +13,7 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const isMapLoaded = useRef(false);
   const sourcesInitialized = useRef(false);
+  const pendingFlights = useRef<Flight[]>([]);
 
   console.log("FlightMap.tsx: Component rendered. Flights count:", flights.length, "mapboxToken:", mapboxToken ? "Token present" : "Token missing");
 
@@ -24,6 +25,8 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
         isMapLoaded: isMapLoaded.current,
         sourcesInitialized: sourcesInitialized.current
       });
+      // Store flights to update later when map is ready
+      pendingFlights.current = currentFlights;
       return;
     }
 
@@ -97,6 +100,110 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
     } else {
       console.log("FlightMap.tsx: Airports source not found");
     }
+
+    // Clear pending flights since we've processed them
+    pendingFlights.current = [];
+  };
+
+  // Helper function to initialize sources and layers
+  const initializeSourcesAndLayers = (mapInstance: mapboxgl.Map) => {
+    if (!mapInstance || sourcesInitialized.current) return;
+
+    console.log("FlightMap.tsx: Initializing sources and layers");
+
+    // Add initial empty sources
+    mapInstance.addSource('routes', { 
+      type: 'geojson', 
+      data: { type: 'FeatureCollection', features: [] } 
+    });
+    
+    mapInstance.addLayer({
+      id: 'routes',
+      type: 'line',
+      source: 'routes',
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round',
+      },
+      paint: {
+        'line-color': '#60a5fa',
+        'line-width': 4,
+        'line-opacity': 0.8,
+      },
+    });
+
+    mapInstance.addSource('airports', { 
+      type: 'geojson', 
+      data: { type: 'FeatureCollection', features: [] } 
+    });
+    
+    mapInstance.addLayer({
+      id: 'airports',
+      type: 'circle',
+      source: 'airports',
+      paint: {
+        'circle-radius': 6,
+        'circle-color': '#ef4444',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff',
+      },
+    });
+
+    // Add click handlers for popups (only once)
+    mapInstance.on('click', 'routes', (e) => {
+      if (e.features && e.features[0]) {
+        const feature = e.features[0];
+        const props = feature.properties;
+        
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div class="p-3">
+              <h3 class="font-bold text-lg">${props?.from} → ${props?.to}</h3>
+              <p><strong>Airline:</strong> ${props?.airline}</p>
+              <p><strong>Aircraft:</strong> ${props?.aircraft}</p>
+              <p><strong>Date:</strong> ${new Date(props?.date).toLocaleDateString()}</p>
+            </div>
+          `)
+          .addTo(mapInstance);
+      }
+    });
+
+    mapInstance.on('click', 'airports', (e) => {
+      if (e.features && e.features[0]) {
+        const feature = e.features[0];
+        const props = feature.properties;
+        
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div class="p-3">
+              <h3 class="font-bold text-lg">${props?.airport}</h3>
+              <p>Airport</p>
+            </div>
+          `)
+          .addTo(mapInstance);
+      }
+    });
+
+    // Change cursor on hover (only once)
+    mapInstance.on('mouseenter', 'routes', () => {
+      mapInstance.getCanvas().style.cursor = 'pointer';
+    });
+
+    mapInstance.on('mouseleave', 'routes', () => {
+      mapInstance.getCanvas().style.cursor = '';
+    });
+
+    // Mark sources as initialized
+    sourcesInitialized.current = true;
+    console.log("FlightMap.tsx: Sources and layers initialized");
+
+    // Process any pending flights
+    if (pendingFlights.current.length > 0) {
+      console.log("FlightMap.tsx: Processing pending flights:", pendingFlights.current.length);
+      updateMapData(mapInstance, pendingFlights.current);
+    }
   };
 
   // Effect 1: Initialize map and add static layers/handlers
@@ -125,101 +232,8 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
 
       if (!map.current) return;
 
-      // Add initial empty sources and layers
-      map.current.addSource('routes', { 
-        type: 'geojson', 
-        data: { type: 'FeatureCollection', features: [] } 
-      });
-      
-      map.current.addLayer({
-        id: 'routes',
-        type: 'line',
-        source: 'routes',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#60a5fa',
-          'line-width': 4,
-          'line-opacity': 0.8,
-        },
-      });
-
-      map.current.addSource('airports', { 
-        type: 'geojson', 
-        data: { type: 'FeatureCollection', features: [] } 
-      });
-      
-      map.current.addLayer({
-        id: 'airports',
-        type: 'circle',
-        source: 'airports',
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#ef4444',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-
-      // Mark sources as initialized
-      sourcesInitialized.current = true;
-      console.log("FlightMap.tsx: Sources and layers initialized");
-
-      // Add click handlers for popups (only once)
-      map.current.on('click', 'routes', (e) => {
-        if (e.features && e.features[0]) {
-          const feature = e.features[0];
-          const props = feature.properties;
-          
-          new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="p-3">
-                <h3 class="font-bold text-lg">${props?.from} → ${props?.to}</h3>
-                <p><strong>Airline:</strong> ${props?.airline}</p>
-                <p><strong>Aircraft:</strong> ${props?.aircraft}</p>
-                <p><strong>Date:</strong> ${new Date(props?.date).toLocaleDateString()}</p>
-              </div>
-            `)
-            .addTo(map.current!);
-        }
-      });
-
-      map.current.on('click', 'airports', (e) => {
-        if (e.features && e.features[0]) {
-          const feature = e.features[0];
-          const props = feature.properties;
-          
-          new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="p-3">
-                <h3 class="font-bold text-lg">${props?.airport}</h3>
-                <p>Airport</p>
-              </div>
-            `)
-            .addTo(map.current!);
-        }
-      });
-
-      // Change cursor on hover (only once)
-      map.current.on('mouseenter', 'routes', () => {
-        if (map.current) {
-          map.current.getCanvas().style.cursor = 'pointer';
-        }
-      });
-
-      map.current.on('mouseleave', 'routes', () => {
-        if (map.current) {
-          map.current.getCanvas().style.cursor = '';
-        }
-      });
-
-      // Update map data immediately after sources are initialized
-      console.log("FlightMap.tsx: Map loaded and sources initialized, updating with current flights:", flights.length);
-      updateMapData(map.current, flights);
+      // Initialize sources and layers
+      initializeSourcesAndLayers(map.current);
     });
 
     // Cleanup map on unmount
@@ -231,6 +245,7 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
       }
       isMapLoaded.current = false;
       sourcesInitialized.current = false;
+      pendingFlights.current = [];
     };
   }, [mapboxToken]); // Re-run only if mapboxToken changes
 
@@ -242,21 +257,15 @@ export const FlightMap = ({ flights, mapboxToken }: FlightMapProps) => {
       console.log("FlightMap.tsx: Updating map with flights data.");
       updateMapData(map.current, flights);
     } else {
-      console.log("FlightMap.tsx: Skipping flights data update. Map not ready.", { 
+      console.log("FlightMap.tsx: Storing flights for later update. Map not ready.", { 
         mapReady: !!map.current, 
         isLoaded: isMapLoaded.current,
         sourcesReady: sourcesInitialized.current
       });
+      // Store flights to update when map becomes ready
+      pendingFlights.current = flights;
     }
   }, [flights]); // Re-run when flights change
-
-  // Effect 3: Update map data when both map is ready and flights are available
-  useEffect(() => {
-    if (map.current && isMapLoaded.current && sourcesInitialized.current && flights.length > 0) {
-      console.log("FlightMap.tsx: Both map and flights ready, ensuring data is displayed");
-      updateMapData(map.current, flights);
-    }
-  }, [isMapLoaded.current, sourcesInitialized.current, flights]);
 
   return (
     <div className="relative">
